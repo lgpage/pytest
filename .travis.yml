@@ -26,6 +26,7 @@ env:
     - TESTENV=py27-nobyte
     - TESTENV=doctesting
     - TESTENV=py27-cxfreeze
+    - TESTENV=py27-cython
 
 script: tox --recreate -e $TESTENV
 
