@@ -4,6 +4,7 @@
 
 # Ignore Cython cythonize output files
 src/*.c
+src/*.cpp
 
 # Ignore cython_setup.py build dir
 build/
