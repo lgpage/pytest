@@ -16,17 +16,26 @@ if __name__ == "__main__":
     except ValueError:
         use_cython = False
 
+    root = os.path.dirname(__file__)
     if use_cython:
-        ext_files = glob.glob('src/*.pyx')
-        ext_files.append('src/pure_py_module.py')
+        ext_files = glob.glob(os.path.join(root, 'src', '*.pyx'))
+        ext_files.append(os.path.join(root, 'src', 'pure_py_module.py'))
     else:
-        ext_files = glob.glob('src/*.c')
+        ext_files = glob.glob(os.path.join(root, 'src', '*.c'))
 
     extensions = []
+    include_dirs = [os.path.abspath(os.path.join(root, 'clib'))]
+    include_dirs.append(os.path.abspath(os.path.join(root, 'src')))
     for file_ in ext_files:
-        filename, ext = os.path.splitext(file_)
-        extensions.append(Extension(filename, [file_],
-                                    include_dirs=[os.path.abspath('clib')]))
+        dep_files = []
+        pyx_file, ext = os.path.splitext(file_)
+        pxd_file = os.path.join(pyx_file, ".pxd")
+        if os.path.exists(pxd_file):
+            dep_files.append(pxd_file)
+
+        extensions.append(Extension(pyx_file, [file_],
+                                    depends=dep_files,
+                                    include_dirs=include_dirs))
 
     if use_cython:
         from Cython.Build import cythonize
