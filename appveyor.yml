@@ -1,28 +1,45 @@
+# https://ci.appveyor.com/project/pytestbot/pytest
+
 environment:
+
   COVERALLS_REPO_TOKEN:
-    secure: 2NJ5Ct55cHJ9WEg3xbSqCuv0rdgzzb6pnzOIG5OkMbTndw3wOBrXntWFoQrXiMFi
     # this is pytest's token in coveralls.io, encrypted
     # using pytestbot account as detailed here:
     # https://www.appveyor.com/docs/build-configuration#secure-variables
+    secure: 2NJ5Ct55cHJ9WEg3xbSqCuv0rdgzzb6pnzOIG5OkMbTndw3wOBrXntWFoQrXiMFi
+
+  global:
+    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+    # /E:ON and /V:ON options are not enabled in the batch script intepreter
+    # See: http://stackoverflow.com/a/13751649/163740
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\.appveyor\\run_with_env.cmd"
+
+  matrix:
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7.9"
+      PYTHON_ARCH: "32"
+      TOXENV: "py27"
+      TOXPYTHON: "C:\\Python27\\python.exe"
+
+    - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5.0"
+      PYTHON_ARCH: "32"
+      TOXENV: "py35"
+      TOXPYTHON: "C:\\Python35\\python.exe"
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
 
 install:
-  - echo Installed Pythons
-  - dir c:\Python*
+  - "powershell .appveyor\\install.ps1"
+  - "%PYTHON%\\python.exe --version"
+  - "%PYTHON%\\Scripts\\pip.exe --version"
+  - "%PYTHON%\\Scripts\\wheel.exe version"
 
-  # install pypy using choco (redirect to a file and write to console in case
-  # choco install returns non-zero, because choco install python.pypy is too
-  # noisy)
-  - choco install python.pypy > pypy-inst.log 2>&1 || (type pypy-inst.log & exit /b 1)
-  - set PATH=C:\tools\pypy\pypy;%PATH% # so tox can find pypy
-  - echo PyPy installed
-  - pypy --version
-
-  - C:\Python35\python -m pip install tox
-
-build: false  # Not a C# project, build stuff at the test step instead.
+build: off
 
 test_script:
-  - C:\Python35\python -m tox
+  - "%CMD_IN_ENV% %PYTHON%/Scripts/tox.exe"
   # coveralls is not in tox's envlist, plus for PRs the secure variable
   # is not defined so we have to check for it
-  - if defined COVERALLS_REPO_TOKEN C:\Python35\python -m tox -e coveralls
+  - if defined COVERALLS_REPO_TOKEN "%CMD_IN_ENV% %PYTHON%/Scripts/tox.exe" -e coveralls
